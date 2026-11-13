@@ -4,6 +4,7 @@ import { isPromptLengthValid, MAX_PROMPT_LENGTH } from '../utils/validatePromptL
 interface PromptInputProps {
   onGenerate: (prompt: string) => void;
   isLoading: boolean;
+  history?: string[];
 }
 
 const EXAMPLE_LABELS = ['대시보드 카드', '알림 설정', '검색 필터', '체크리스트', '요금제 카드', '고객 상세 패널'];
@@ -17,7 +18,7 @@ const EXAMPLES = [
   '테이블 행 상세보기 패널. 선택한 고객의 기본 정보와 최근 활동 표시',
 ];
 
-export function PromptInput({ onGenerate, isLoading }: PromptInputProps) {
+export function PromptInput({ onGenerate, isLoading, history = [] }: PromptInputProps) {
   const [prompt, setPrompt] = useState('');
   const feedbackId = useId();
   const isLengthValid = isPromptLengthValid(prompt);
@@ -87,6 +88,14 @@ export function PromptInput({ onGenerate, isLoading }: PromptInputProps) {
           </button>
         ))}
       </div>
+      {history.length > 0 && (
+        <section className="prompt-examples" aria-label="프롬프트 히스토리">
+          <span className="examples-label">최근 프롬프트</span>
+          {history.map((item) => (
+            <button key={item} type="button" className="example-chip" onClick={() => setPrompt(item)}>{item}</button>
+          ))}
+        </section>
+      )}
     </div>
   );
 }
