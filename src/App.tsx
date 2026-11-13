@@ -68,7 +68,7 @@ function App() {
       {error && <div className="error-banner" role="alert"><p>{error}</p></div>}
       <section className="results-section" aria-label="생성 결과">
         <div className="results-header">
-          <div className="results-heading"><h2>컴포넌트 아카이브</h2><span className="result-count">{components.length}</span></div>
+          <div className="results-heading"><h2>생성된 컴포넌트</h2><span className="result-count">{components.length}</span></div>
           {components.length > 0 ? <button className="btn-clear" onClick={clearAll}>전체 삭제</button> : <span className="results-hint">Preview & source code</span>}
         </div>
         {components.length === 0 && !isLoading && (
@@ -77,7 +77,6 @@ function App() {
             <div className="empty-copy"><h2>작업 지시를 기다리고 있습니다.</h2><p>프롬프트를 입력하거나 예시를 선택하세요.<br />생성된 컴포넌트의 미리보기와 코드가 여기에 표시됩니다.</p><span className="empty-tag">생성된 컴포넌트가 없습니다</span></div>
           </div>
         )}
-        {isLoading && <div className="loading-card" role="status"><div className="loading-pulse" /><p>컴포넌트 구현 중입니다...</p></div>}
         <div className="results-grid">{components.map((component) => <ComponentCard key={component.id} component={component} onRemove={removeComponent} onRegenerate={handleGenerate} isLoading={isLoading} />)}</div>
       </section>
       <footer className="app-footer"><span>Atelier / T — React component studio</span><span>정확하게, 차분하게. 당신의 다음 인터페이스.</span></footer>
