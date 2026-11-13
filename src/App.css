@@ -92,3 +92,8 @@
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
 .hero-art { isolation: isolate; }
+
+.prompt-feedback { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; margin-top: -5px; color: var(--text-muted); font-size: 11px; line-height: 1.7; }
+.prompt-count { margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.prompt-feedback--error { color: var(--danger); }
+.prompt-textarea[aria-invalid="true"] { border-color: var(--danger); }
