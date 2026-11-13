@@ -1,3 +1,4 @@
+import { consumeProvider } from './stream';
 import { stripCodeFences, ensureRenderCall } from './generator';
 import { withModelFallback } from './fallback';
 
@@ -65,9 +66,10 @@ function resolveApiKey(provider: Provider, clientKey?: string): string | null {
   return clientKey || ENV_KEYS[provider] || null;
 }
 
-async function callAnthropic(prompt: string, apiKey: string): Promise<string> {
+async function callAnthropic(prompt: string, apiKey: string, onCode?: (code: string) => void, signal?: AbortSignal): Promise<string> {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
+    signal,
     headers: {
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
@@ -76,6 +78,7 @@ async function callAnthropic(prompt: string, apiKey: string): Promise<string> {
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 4096,
+      stream: !!onCode,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: prompt }],
     }),
@@ -84,6 +87,8 @@ async function callAnthropic(prompt: string, apiKey: string): Promise<string> {
   if (!response.ok) {
     throw new Error(`Claude API error: ${response.status}`);
   }
+
+  if (onCode) return consumeProvider(response, 'anthropic', onCode);
 
   const data = (await response.json()) as {
     content: Array<{ type: string; text?: string }>;
@@ -95,11 +100,12 @@ async function callAnthropic(prompt: string, apiKey: string): Promise<string> {
     .join('');
 }
 
-async function callGoogleModel(prompt: string, apiKey: string, model: string): Promise<string> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+async function callGoogleModel(prompt: string, apiKey: string, model: string, onCode?: (code: string) => void, signal?: AbortSignal): Promise<string> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:${onCode ? 'streamGenerateContent?alt=sse&' : 'generateContent?'}key=${apiKey}`;
 
   const response = await fetch(url, {
     method: 'POST',
+    signal,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
@@ -111,6 +117,8 @@ async function callGoogleModel(prompt: string, apiKey: string, model: string): P
   if (!response.ok) {
     throw new Error(`Gemini API error: ${response.status}`);
   }
+
+  if (onCode) return consumeProvider(response, 'google', onCode);
 
   const data = (await response.json()) as {
     candidates: Array<{
@@ -131,12 +139,16 @@ async function callGoogleModel(prompt: string, apiKey: string, model: string): P
   );
 }
 
-async function callGoogle(prompt: string, apiKey: string): Promise<string> {
-  return withModelFallback(GOOGLE_MODELS, (model) => callGoogleModel(prompt, apiKey, model));
+async function callGoogle(prompt: string, apiKey: string, onCode?: (code: string) => void, signal?: AbortSignal): Promise<string> {
+  return withModelFallback(GOOGLE_MODELS, (model) => {
+    signal?.throwIfAborted();
+    onCode?.('');
+    return callGoogleModel(prompt, apiKey, model, onCode, signal);
+  });
 }
 
 const server = Bun.serve({
-  port: 3002,
+  port: Number(process.env.API_PORT || 3002),
   async fetch(req) {
     if (req.method === 'OPTIONS') {
       return new Response(null, { headers: CORS_HEADERS });
@@ -158,10 +170,11 @@ const server = Bun.serve({
 
     if (req.method === 'POST' && url.pathname === '/api/generate') {
       try {
-        const { prompt, apiKey, provider = 'anthropic' } = (await req.json()) as {
+        const { prompt, apiKey, provider = 'anthropic', stream = false } = (await req.json()) as {
           prompt: string;
           apiKey?: string;
           provider?: Provider;
+          stream?: boolean;
         };
 
         const resolvedKey = resolveApiKey(provider, apiKey);
@@ -178,6 +191,30 @@ const server = Bun.serve({
             { error: 'Prompt is required' },
             { status: 400, headers: CORS_HEADERS }
           );
+        }
+
+        if (stream) {
+          const abort = new AbortController();
+          req.signal.addEventListener('abort', () => abort.abort(), {once: true});
+          const body = new ReadableStream<Uint8Array>({
+            async start(controller) {
+              const send = (event: object) => {
+                if (!abort.signal.aborted) controller.enqueue(new TextEncoder().encode('data: ' + JSON.stringify(event) + '\n\n'));
+              };
+              try {
+                const onCode = (code: string) => send({code});
+                const text = provider === 'google'
+                  ? await callGoogle(prompt, resolvedKey, onCode, abort.signal)
+                  : await callAnthropic(prompt, resolvedKey, onCode, abort.signal);
+                send({code: ensureRenderCall(stripCodeFences(text)), done: true});
+              } catch (err) {
+                const message = err instanceof Error ? err.message : 'Unknown error';
+                send({error: message.includes('503') ? 'API 서버가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해주세요.' : message.includes('429') ? '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' : message});
+              } finally { if (!abort.signal.aborted) controller.close(); }
+            },
+            cancel() { abort.abort(); },
+          });
+          return new Response(body, {headers: {...CORS_HEADERS, 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'}});
         }
 
         const text =

@@ -13,7 +13,13 @@ interface ComponentCardProps {
 type Tab = 'preview' | 'code';
 
 export function ComponentCard({ component, onRemove, onRegenerate, isLoading }: ComponentCardProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('preview');
+  const [selectedTab, setActiveTab] = useState<Tab>('preview');
+  const [previousStatus, setPreviousStatus] = useState(component.status);
+  if (previousStatus !== component.status) {
+    setPreviousStatus(component.status);
+    if (component.status === 'complete') setActiveTab('preview');
+  }
+  const activeTab = component.status === 'streaming' || component.status === 'error' ? 'code' : selectedTab;
   const [previewKey, setPreviewKey] = useState(0);
   const createdAt = component.createdAt.toLocaleTimeString('ko-KR', {
     hour: '2-digit',
@@ -54,6 +60,7 @@ export function ComponentCard({ component, onRemove, onRegenerate, isLoading }: 
       <div className="card-tabs">
         <button
           className={`tab ${activeTab === 'preview' ? 'tab--active' : ''}`}
+          disabled={component.status === 'streaming' || component.status === 'error'}
           onClick={() => setActiveTab('preview')}
         >
           미리보기
@@ -65,7 +72,9 @@ export function ComponentCard({ component, onRemove, onRegenerate, isLoading }: 
           코드
         </button>
       </div>
-      <div className="card-content">
+      <div className="card-content" aria-busy={component.status === 'streaming'}>
+        {component.status === 'streaming' && <p role="status">코드를 생성하고 있습니다...</p>}
+        {component.status === 'error' && <p role="status">생성에 실패했습니다. 다시 시도해주세요.</p>}
         {activeTab === 'preview' ? (
           <LivePreview key={previewKey} code={component.code} />
         ) : (
