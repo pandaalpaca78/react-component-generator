@@ -1,7 +1,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 :root { color-scheme: light; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
-body { font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', 'Segoe UI', sans-serif; background: #fcf9f4; color: #604e49; min-width: 320px; min-height: 100vh; }
+body { font-family: 'Bahnschrift', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; background: #eef5fa; color: #263e55; min-width: 320px; min-height: 100vh; background-image: linear-gradient(#c4ddeb22 1px, transparent 1px), linear-gradient(90deg, #c4ddeb22 1px, transparent 1px); background-size: 40px 40px; }
 button, input, select, textarea { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
-button:focus-visible, a:focus-visible { outline: 3px solid #ad7988; outline-offset: 4px; }
-::selection { background: #f5d6de; color: #604e49; }
+button:focus-visible, a:focus-visible { outline: 3px solid #1688c2; outline-offset: 4px; }
+::selection { background: #b8e6fb; color: #183750; }

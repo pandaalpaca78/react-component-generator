@@ -7,7 +7,7 @@ interface PromptInputProps {
 }
 
 const EXAMPLE_LABELS = ['대시보드 카드', '알림 설정', '검색 필터', '체크리스트', '요금제 카드', '고객 상세 패널'];
-const EXAMPLE_ICONS = ['▦', '♧', '⌕', '☑', '◇', '♡'];
+const EXAMPLE_ICONS = ['▦', '◉', '⌕', '☑', '◇', '▤'];
 const EXAMPLES = [
   'SaaS 관리자용 KPI 카드 3개. 매출, 활성 사용자, 전환율을 비교 가능한 형태로 표시',
   '설정 페이지의 알림 토글 패널. 이메일, 슬랙, 주간 리포트 옵션 포함',
@@ -36,7 +36,7 @@ export function PromptInput({ onGenerate, isLoading }: PromptInputProps) {
   return (
     <div className="prompt-section">
       <div className="prompt-heading">
-        <span className="panel-kicker">아이디어 한 조각</span>
+        <span className="panel-kicker">새 컴포넌트</span>
         <h2>무엇을 만들까요?</h2>
       </div>
       <form onSubmit={handleSubmit} className="prompt-form">
@@ -46,7 +46,7 @@ export function PromptInput({ onGenerate, isLoading }: PromptInputProps) {
           aria-describedby={feedbackId}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="예: 파스텔 톤의 프로필 카드를 만들어줘. 동그란 사진과 이름, 짧은 소개, 팔로우 버튼이 있으면 좋겠어."
+          placeholder="예: 화이트와 블루 톤의 프로필 카드. 프로필 이미지, 이름, 소개와 팔로우 버튼을 넣어줘."
           className="prompt-textarea"
           rows={3}
           onKeyDown={(e) => {
@@ -75,7 +75,7 @@ export function PromptInput({ onGenerate, isLoading }: PromptInputProps) {
         </div>
       </form>
       <div className="prompt-examples">
-        <span className="examples-label">어디서 시작할지 고민이라면?</span>
+        <span className="examples-label">빠른 시작</span>
         {EXAMPLES.map((example, index) => (
           <button
             key={example}
