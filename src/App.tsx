@@ -3,6 +3,8 @@ import { PromptInput } from './components/PromptInput';
 import { ComponentCard } from './components/ComponentCard';
 import { TacticalArt } from './components/TacticalArt';
 import { useComponentGenerator } from './hooks/useComponentGenerator';
+import { useLocalStorageState } from './hooks/useLocalStorageState';
+import { decodeApiKey, decodeProvider } from './utils/storedState';
 import type { Provider } from './types';
 import './App.css';
 
@@ -12,11 +14,11 @@ const PROVIDER_CONFIG = {
 } as const;
 
 function App() {
-  const [apiKey, setApiKey] = useState('');
+  const [apiKey, setApiKey] = useLocalStorageState('atelier.apiKey', '', decodeApiKey);
   const [showKey, setShowKey] = useState(false);
-  const [provider, setProvider] = useState<Provider>('google');
+  const [provider, setProvider] = useLocalStorageState<Provider>('atelier.provider', 'google', decodeProvider);
   const [envKeys, setEnvKeys] = useState<Record<Provider, boolean>>({ anthropic: false, google: false });
-  const { components, isLoading, error, generate, removeComponent, clearAll } = useComponentGenerator();
+  const { components, promptHistory, isLoading, error, generate, removeComponent, clearAll } = useComponentGenerator();
   useEffect(() => {
     fetch('/api/config').then((res) => res.json()).then((data) => setEnvKeys(data.envKeys)).catch(() => {});
   }, []);
@@ -44,7 +46,7 @@ function App() {
       </header>
       <main className="workspace">
         <section className="composer-panel" aria-label="컴포넌트 생성">
-          <PromptInput onGenerate={handleGenerate} isLoading={isLoading} />
+          <PromptInput onGenerate={handleGenerate} isLoading={isLoading} history={promptHistory} />
         </section>
         <aside className="settings-panel" aria-label="실행 설정">
           <div className="settings-header"><span className="panel-kicker">Connection</span><h2>연결 설정</h2></div>
